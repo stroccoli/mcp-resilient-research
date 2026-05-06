@@ -1,0 +1,1 @@
+"""Resilient Research MCP Server."""
