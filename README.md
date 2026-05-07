@@ -271,5 +271,5 @@ After a session completes, the `research://knowledge-graph/{session_id}` resourc
 ## Running Tests
 
 ```bash
-uv run pytest tests/ -x -q
+uv run --extra dev python -m pytest tests/ -x -q
 ```
