@@ -126,8 +126,14 @@ async def run_research_graph(session_id: str, initial_state: ResearchState) -> N
     """
     config = {"configurable": {"thread_id": session_id}}
 
+    # LangGraph checkpoints are transient (already lost on container restart /
+    # scale-to-zero).  Using a local tmpfs path avoids opening a second
+    # connection to the Azure Files SMB share, which causes "database is locked"
+    # because SMB does not support SQLite's fcntl-based file locking.
+    checkpoint_path = "/tmp/langgraph_checkpoints.db"
+
     try:
-        async with AsyncSqliteSaver.from_conn_string(settings.database_path) as checkpointer:
+        async with AsyncSqliteSaver.from_conn_string(checkpoint_path) as checkpointer:
             graph = _build_graph().compile(checkpointer=checkpointer)
 
             logger.info("[%s] Graph execution started.", session_id)

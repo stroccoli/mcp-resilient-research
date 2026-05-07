@@ -35,6 +35,16 @@ langgraph.db
 .mypy_cache/
 .ruff_cache/
 
+# ── CI / CD ───────────────────────────────────────────────────────────────────
+# Remove this entry when you are ready to activate the GitHub Actions workflow.
+.github/workflows/cd.yml
+
+# ── Azure deployment (contains secrets — never commit) ────────────────────────
+containerapp.yaml
+
+# ── Local HTTP request files ──────────────────────────────────────────────────
+requests/
+
 # ── Editors ───────────────────────────────────────────────────────────────────
 .vscode/
 .idea/

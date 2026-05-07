@@ -71,10 +71,19 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_artifacts_url
 """
 
 
+# Individual DDL statements — avoids executescript() which demands an
+# exclusive lock on the whole file (unreliable on Azure Files / SMB mounts).
+_SCHEMA_STATEMENTS = [
+    s.strip() for s in SCHEMA_SQL.split(";") if s.strip()
+]
+
+
 async def init_db() -> None:
     """Create all tables and indexes. Safe to call multiple times."""
     from .connection import get_connection
 
     conn = await get_connection()
-    await conn.executescript(SCHEMA_SQL)
+    async with conn.cursor() as cur:
+        for stmt in _SCHEMA_STATEMENTS:
+            await cur.execute(stmt)
     await conn.commit()

@@ -273,7 +273,11 @@ def trace_technology_history(technology: str) -> list[dict]:
 # ── CLI entry point ───────────────────────────────────────────────────────────
 
 def main() -> None:
-    mcp.run()
+    # stateless_http=True removes the MCP session handshake requirement.
+    # Each HTTP request is handled independently — no need to call `initialize`
+    # first and pass Mcp-Session-Id on every subsequent request.
+    # This is correct here because all state lives in SQLite, not in the MCP session.
+    mcp.run(transport="streamable-http", host="0.0.0.0", port=8000, stateless_http=True)
 
 
 if __name__ == "__main__":
