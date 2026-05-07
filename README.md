@@ -4,8 +4,18 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![MCP Compatible](https://img.shields.io/badge/MCP-compatible-green.svg)](https://modelcontextprotocol.io)
+[![Hosted on Azure](https://img.shields.io/badge/hosted-Azure%20Container%20Apps-0078D4?logo=microsoftazure)](https://mcp-resilient-research.graysmoke-51700ada.eastus.azurecontainerapps.io)
 
-An autonomous, multi-provider web research pipeline exposed as a **Model Context Protocol (MCP)** server. Given a topic and a research goal, it searches the web, scrapes candidate sources, evaluates their authority and relevance with an LLM, applies configurable constraints, and persists the curated artifacts to a local SQLite database.
+An autonomous, multi-provider web research pipeline exposed as a **Model Context Protocol (MCP)** server.
+
+Give it a **topic** and a **research goal** — it searches the web across multiple providers, scrapes candidate sources, scores their authority and relevance with an LLM, applies configurable constraints, and returns a curated **knowledge graph** with key findings and full provenance. Works with any MCP client: Claude Desktop, VS Code Copilot, Cursor, and more.
+
+> **Live server** — `https://mcp-resilient-research.graysmoke-51700ada.eastus.azurecontainerapps.io/mcp`
+> No API key required to connect. Bring your own search/LLM keys or use DuckDuckGo for zero-config research.
+
+---
+
+**Contents:** [Features](#features) · [Use the Hosted Server](#use-the-hosted-server-zero-setup) · [Quick Start](#quick-start) · [Deploy to Azure](#deploy-to-azure-your-own-instance) · [MCP Interface](#mcp-interface) · [Configuration](#configuration) · [Architecture](#project-structure)
 
 ---
 
@@ -50,6 +60,77 @@ Add the following to your MCP client config (e.g. `claude_desktop_config.json`):
   }
 }
 ```
+
+---
+
+## Use the Hosted Server (zero setup)
+
+The server is already running on Azure Container Apps. Point any MCP client directly at it:
+
+```
+https://mcp-resilient-research.graysmoke-51700ada.eastus.azurecontainerapps.io/mcp
+```
+
+**Claude Desktop** — add to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "resilient-research": {
+      "type": "http",
+      "url": "https://mcp-resilient-research.graysmoke-51700ada.eastus.azurecontainerapps.io/mcp"
+    }
+  }
+}
+```
+
+**VS Code Copilot** — add to `.vscode/mcp.json` (or user `settings.json`):
+
+```json
+{
+  "servers": {
+    "resilient-research": {
+      "type": "http",
+      "url": "https://mcp-resilient-research.graysmoke-51700ada.eastus.azurecontainerapps.io/mcp"
+    }
+  }
+}
+```
+
+---
+
+## Deploy to Azure (your own instance)
+
+Requires [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) with the Container Apps extension.
+
+```bash
+# 1. Login and install the extension (once)
+az login
+az extension add --name containerapp
+
+# 2. Create a resource group and Container Apps environment
+az group create --name my-rg --location eastus
+az containerapp env create --name my-env --resource-group my-rg --location eastus
+
+# 3. Build and push the image (requires Docker + a container registry)
+docker build -t <registry>/mcp-resilient-research:latest .
+docker push <registry>/mcp-resilient-research:latest
+
+# 4. Deploy
+az containerapp create \
+  --name mcp-resilient-research \
+  --resource-group my-rg \
+  --environment my-env \
+  --image <registry>/mcp-resilient-research:latest \
+  --target-port 8000 \
+  --ingress external \
+  --env-vars \
+      LITELLM_MODEL=gpt-4o-mini \
+      OPENAI_API_KEY=secretref:openai-api-key \
+  --secrets openai-api-key=<YOUR_OPENAI_KEY>
+```
+
+The server exposes `/mcp` (Streamable HTTP) and `/health` on port 8000. Scale-to-zero is supported — set `--min-replicas 0` to keep costs near zero when idle.
 
 ---
 
@@ -190,5 +271,5 @@ After a session completes, the `research://knowledge-graph/{session_id}` resourc
 ## Running Tests
 
 ```bash
-uv run pytest tests/ -x -q
+uv run --extra dev python -m pytest tests/ -x -q
 ```

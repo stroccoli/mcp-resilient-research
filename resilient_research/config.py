@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
     # ── LLM backend ───────────────────────────────────────────────────────────
     litellm_model: str = "ollama/llama3.1"
-    litellm_api_base: str = "http://localhost:11434"
+    litellm_api_base: str = ""
 
     # ── Query generation ──────────────────────────────────────────────────────
     # "deterministic" uses hand-crafted templates (no LLM call, default).
